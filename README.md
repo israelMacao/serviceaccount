@@ -19,6 +19,8 @@ Este es un microservicio para la creaci{on de cuentas y registro de movimientos 
    mvn clean install
    mvn spring-boot:run
 
-4. Acceder a la API:
+3. Acceder a la API:
     http://localhost:8081/swagger-ui/index.html
+
+4. Configurar el archivo.properties para la conexión a la base de datos
 
