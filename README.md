@@ -14,13 +14,14 @@ Este es un microservicio para la creaci{on de cuentas y registro de movimientos 
    ```sh
    https://github.com/israelMacao/serviceaccount.git
    cd TU_REPOSITORIO
-2. Construir y ejecutar:
+2. Configurar el archivo aplication.properties para la conexión a la base de datos
+3. Construir y ejecutar:
    ```sh  
    mvn clean install
    mvn spring-boot:run
 
-3. Acceder a la API:
+4. Acceder a la API:
     http://localhost:8081/swagger-ui/index.html
 
-4. Configurar el archivo aplication.properties para la conexión a la base de datos
+
 
