@@ -9,7 +9,7 @@ import com.prueba.cuenta.exception.AccountBusinessException;
 import com.prueba.cuenta.repository.AccountRepository;
 import com.prueba.cuenta.repository.MovementRepository;
 import com.prueba.cuenta.service.client.ClientService;
-import com.prueba.cuenta.utils.ApiResponse;
+import com.prueba.cuenta.utils.ApiResponseClient;
 import com.prueba.cuenta.utils.ResponseProcess;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class MovementService {
     private final ClientService clientService;
 
     @Transactional
-    public Mono<ApiResponse<Movement>> createMovement(MovementDTO movementDTO) {
+    public Mono<ApiResponseClient<Movement>> createMovement(MovementDTO movementDTO) {
         log.info("Creando movimiento con los datos: {}", movementDTO);
 
         return Mono.fromCallable(() -> {
@@ -62,7 +62,7 @@ public class MovementService {
                 });
     }
 
-    public Flux<ApiResponse<Movement>> getAllMovements() {
+    public Flux<ApiResponseClient<Movement>> getAllMovements() {
         return Flux.fromIterable(movementRepository.findAll())
                 .map(movement -> createSuccessResponse(movement, "Consulta exitosa"))
                 .onErrorResume(e -> {
@@ -71,7 +71,7 @@ public class MovementService {
                 });
     }
 
-    public Flux<ApiResponse<Movement>> getMovementsByAccount(Integer accountId) {
+    public Flux<ApiResponseClient<Movement>> getMovementsByAccount(Integer accountId) {
         return Flux.fromIterable(movementRepository.findByCuenta_NumeroCuenta(accountId))
                 .map(movement -> createSuccessResponse(movement, "Consulta exitosa"))
                 .onErrorResume(e -> {
@@ -80,7 +80,7 @@ public class MovementService {
                 });
     }
 
-    public Mono<ApiResponse<List<MovementReportDTO>>> generateReport(
+    public Mono<ApiResponseClient<List<MovementReportDTO>>> generateReport(
             Integer accountId, LocalDate startDate, LocalDate endDate) {
 
         return Mono.fromCallable(() -> {
@@ -93,12 +93,12 @@ public class MovementService {
                 .map(report -> {
                     ResponseProcess responseProcess = new ResponseProcess(
                             REPORT_SUCCESS_CODE, "Reporte generado exitosamente", SUCCESS_STATUS);
-                    return new ApiResponse<>(report, responseProcess);
+                    return new ApiResponseClient<>(report, responseProcess);
                 })
                 .onErrorResume(e -> {
                     log.error("Error al generar el reporte: {}", e.getMessage());
                     ResponseProcess responseProcess = new ResponseProcess(REPORT_ERROR_CODE, e.getMessage(), ERROR_STATUS);
-                    return Mono.just(new ApiResponse<>(null, responseProcess));
+                    return Mono.just(new ApiResponseClient<>(null, responseProcess));
                 });
     }
 
@@ -139,14 +139,14 @@ public class MovementService {
         return amount.compareTo(BigDecimal.ZERO) > 0 ? MovementType.DEPOSITO : MovementType.RETIRO;
     }
 
-    private <T> ApiResponse<T> createSuccessResponse(T data, String message) {
+    private <T> ApiResponseClient<T> createSuccessResponse(T data, String message) {
         ResponseProcess responseProcess = new ResponseProcess(SUCCESS_CODE, message, SUCCESS_STATUS);
-        return new ApiResponse<>(data, responseProcess);
+        return new ApiResponseClient<>(data, responseProcess);
     }
 
-    private <T> ApiResponse<T> createErrorResponse(String errorMessage) {
+    private <T> ApiResponseClient<T> createErrorResponse(String errorMessage) {
         ResponseProcess responseProcess = new ResponseProcess(ERROR_CODE, errorMessage, ERROR_STATUS);
-        return new ApiResponse<>(null, responseProcess);
+        return new ApiResponseClient<>(null, responseProcess);
     }
 
     private Mono<List<MovementReportDTO>> buildReportFromMovements(List<Movement> movements) {

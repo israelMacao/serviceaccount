@@ -6,7 +6,7 @@ import com.prueba.cuenta.entity.AccountType;
 import com.prueba.cuenta.exception.AccountBusinessException;
 import com.prueba.cuenta.repository.AccountRepository;
 import com.prueba.cuenta.service.client.ClientService;
-import com.prueba.cuenta.utils.ApiResponse;
+import com.prueba.cuenta.utils.ApiResponseClient;
 import com.prueba.cuenta.utils.ResponseProcess;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -33,7 +32,7 @@ public class AccountService {
     private final ClientService clientService;
 
     @Transactional
-    public Mono<ApiResponse<Account>> createAccount(AccountDTO accountDTO) {
+    public Mono<ApiResponseClient<Account>> createAccount(AccountDTO accountDTO) {
         String uuid = MDC.get("uuid");
         log.info("[UUID: {}] Inicia proceso de creación de cuenta: {}", uuid, accountDTO.getNumeroCuenta());
 
@@ -59,13 +58,13 @@ public class AccountService {
                 });
     }
 
-    public Mono<ApiResponse<List<Account>>> getAllAccounts() {
+    public Mono<ApiResponseClient<List<Account>>> getAllAccounts() {
         List<Account> accounts = accountRepository.findAll();
         log.info("Obteniendo todas las cuentas: {} registros encontrados", accounts.size());
         return createSuccessResponse(accounts, "Consulta exitosa");
     }
 
-    public Mono<ApiResponse<Account>> getAccountById(Integer accountNumber) {
+    public Mono<ApiResponseClient<Account>> getAccountById(Integer accountNumber) {
         return Mono.fromCallable(() -> findAccountById(accountNumber))
                 .map(account -> {
                     log.info("Cuenta encontrada: {}", account);
@@ -78,7 +77,7 @@ public class AccountService {
     }
 
     @Transactional
-    public Mono<ApiResponse<Account>> updateAccount(Integer accountNumber, AccountDTO accountDTO) {
+    public Mono<ApiResponseClient<Account>> updateAccount(Integer accountNumber, AccountDTO accountDTO) {
         if (!isValidAccountType(accountDTO.getTipoCuenta())) {
             return createErrorResponse("El tipo de cuenta debe ser AHORROS o CORRIENTE", BAD_REQUEST_CODE);
         }
@@ -139,22 +138,22 @@ public class AccountService {
         }
     }
 
-    private <T> Mono<ApiResponse<T>> createSuccessResponse(T data, String message) {
+    private <T> Mono<ApiResponseClient<T>> createSuccessResponse(T data, String message) {
         ResponseProcess responseProcess = new ResponseProcess(SUCCESS_CODE, message, SUCCESS_STATUS);
-        return Mono.just(new ApiResponse<>(data, responseProcess));
+        return Mono.just(new ApiResponseClient<>(data, responseProcess));
     }
 
-    private <T> ApiResponse<T> createSuccessResponseWithData(T data, String message) {
+    private <T> ApiResponseClient<T> createSuccessResponseWithData(T data, String message) {
         ResponseProcess responseProcess = new ResponseProcess(SUCCESS_CODE, message, SUCCESS_STATUS);
-        return new ApiResponse<>(data, responseProcess);
+        return new ApiResponseClient<>(data, responseProcess);
     }
 
-    private <T> Mono<ApiResponse<T>> createErrorResponse(String errorMessage, String errorCode) {
+    private <T> Mono<ApiResponseClient<T>> createErrorResponse(String errorMessage, String errorCode) {
         ResponseProcess responseProcess = new ResponseProcess(errorCode, errorMessage, ERROR_STATUS);
-        return Mono.just(new ApiResponse<>(null, responseProcess));
+        return Mono.just(new ApiResponseClient<>(null, responseProcess));
     }
 
-    private <T> Mono<ApiResponse<T>> handleAccountFindError(Throwable e) {
+    private <T> Mono<ApiResponseClient<T>> handleAccountFindError(Throwable e) {
         if (e instanceof AccountBusinessException) {
             return createErrorResponse(e.getMessage(), ERROR_CODE);
         }

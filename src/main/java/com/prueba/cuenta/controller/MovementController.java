@@ -4,8 +4,10 @@ import com.prueba.cuenta.dto.MovementDTO;
 import com.prueba.cuenta.dto.MovementReportDTO;
 import com.prueba.cuenta.entity.Movement;
 import com.prueba.cuenta.service.MovementService;
-import com.prueba.cuenta.utils.ApiResponse;
+import com.prueba.cuenta.utils.ApiResponseClient;
 import com.prueba.cuenta.utils.ResponseProcess;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -20,13 +22,15 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/movimientos")
+@Tag(name = "Movement Controller", description = "API para la gestión de movimientos")
 public class MovementController {
 
     @Autowired
     private MovementService movementService;
 
+    @Operation(summary = "Crea un registro de movimiento de una cuenta", description = "Realiza depositos o retiros de una cuenta existente con los datos proporcionados")
     @PostMapping
-    public Mono<ResponseEntity<ApiResponse<Movement>>> createMovement(@Valid @RequestBody MovementDTO movementDTO) {
+    public Mono<ResponseEntity<ApiResponseClient<Movement>>> createMovement(@Valid @RequestBody MovementDTO movementDTO) {
         return movementService.createMovement(movementDTO)
                 .map(response -> {
                     if (response.getResponseProcess() != null && !"0".equals(response.getResponseProcess().getCode())) {
@@ -35,29 +39,31 @@ public class MovementController {
                     return new ResponseEntity<>(response, HttpStatus.CREATED);
                 })
                 .onErrorResume(e -> {
-                    ApiResponse<Movement> errorResponse = new ApiResponse<>(null, new ResponseProcess("1", e.getMessage(), "ERROR"));
+                    ApiResponseClient<Movement> errorResponse = new ApiResponseClient<>(null, new ResponseProcess("1", e.getMessage(), "ERROR"));
                     return Mono.just(new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR));
                 });
     }
 
+    @Operation(summary = "Reporte de movimientos", description = "Devuelve el reporte de movimientos de una cuenta existente con fecha inicio y fecha fin")
     @GetMapping("/reporte")
-    public Mono<ResponseEntity<ApiResponse<List<MovementReportDTO>>>> generateReport(
+    public Mono<ResponseEntity<ApiResponseClient<List<MovementReportDTO>>>> generateReport(
             @RequestParam Integer cuentaId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return movementService.generateReport(cuentaId, startDate, endDate)
                 .map(response -> ResponseEntity.ok(response))
                 .onErrorResume(e -> {
-                    ApiResponse<List<MovementReportDTO>> errorResponse = new ApiResponse<>(null, new ResponseProcess("500", e.getMessage(), "ERROR"));
+                    ApiResponseClient<List<MovementReportDTO>> errorResponse = new ApiResponseClient<>(null, new ResponseProcess("500", e.getMessage(), "ERROR"));
                     return Mono.just(new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR));
                 });
     }
 
+    @Operation(summary = "Movimientos de una cuenta", description = "Realiza la consulta de todos los movimientos de una cuenta")
     @GetMapping("/{cuentaId}")
-    public Flux<ApiResponse<Movement>> getMovementsByAccount(@PathVariable Integer cuentaId) {
+    public Flux<ApiResponseClient<Movement>> getMovementsByAccount(@PathVariable Integer cuentaId) {
         return movementService.getMovementsByAccount(cuentaId)
                 .onErrorResume(e -> {
-                    ApiResponse<Movement> errorResponse = new ApiResponse<>(null, new ResponseProcess("1", e.getMessage(), "ERROR"));
+                    ApiResponseClient<Movement> errorResponse = new ApiResponseClient<>(null, new ResponseProcess("1", e.getMessage(), "ERROR"));
                     return Flux.just(errorResponse);
                 });
     }
